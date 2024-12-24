@@ -49,7 +49,7 @@ class Cryption:
     #def decrypt(self, token):
 
         #with open("secrets.key", "rb") as key_file:
-            self.key = key_file.read()
+            #self.key = key_file.read()
 
         #password = self.f.decrypt(token)
 
