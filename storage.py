@@ -30,4 +30,3 @@ class Storage:
                     return json.load(self.data[username], f)
         except FileNotFoundError:
             print("You don't have a password stored for this username")
-
