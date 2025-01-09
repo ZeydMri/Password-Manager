@@ -1,32 +1,37 @@
 import json
-import cryption
+import base64
 from cryption import Cryption
-
-
 
 class Storage:
 
-    def __init__(self, username, password, password_file="password.json"):
+    def __init__(self, password_file="password.json"):
 
-        self.username = username
         self.data = {}
-        self.password = password
         self.password_file = password_file
+        self.load_data()
 
-    def store(self, username, password):
-
-        password = Cryption(password=self.password).encrypt()
-        self.data[username] = password
-
-        with open(self.password_file, "w") as f:
-            json.dump(self.data, f)
-
-
-    def retrieve(self, username):
-
+    def load_data(self):
         try:
-            if username in self.password_file:
-                with open(self.password_file, "r") as f:
-                    return json.load(self.data[username], f)
+            with open(self.password_file, "r") as file:
+                self.data = json.load(file)
         except FileNotFoundError:
-            print("You don't have a password stored for this username")
+            self.data = {}
+
+    def store(self, email, password):
+
+        encrypted_password = Cryption().encrypt(password)
+        encrypted_password_base64 = base64.b64encode(encrypted_password).decode('utf-8')
+        self.data[email] = encrypted_password_base64
+
+        with open(self.password_file, "w") as file:
+            json.dump(self.data, file, indent=4)
+
+
+    def retrieve(self, email):
+
+        if email in self.data:
+            encrypted_password_base64 = self.data[email]
+            encrypted_password = base64.b64decode(encrypted_password_base64.encode('utf-8'))
+            return Cryption().decrypt(encrypted_password)
+        else:
+            raise KeyError(f"No password found for account: {email}")

@@ -1,0 +1,60 @@
+{
+    "mrinizeyd@gmail.com": {
+        "logins": [
+            {
+                "login_time": "2025-01-08T19:04:27.737339",
+                "login_hour": 19,
+                "day_of_week": 2,
+                "ip_adress": "70.50.206.57",
+                "country": "Canada",
+                "city": "Laval",
+                "failed_attempts": 0
+            },
+            {
+                "login_time": "2025-01-08T20:48:05.971493",
+                "login_hour": 20,
+                "day_of_week": 2,
+                "ip_adress": "70.50.206.57",
+                "country": "Canada",
+                "city": "Laval",
+                "failed_attempts": 0
+            },
+            {
+                "login_time": "2025-01-08T20:48:08.051702",
+                "login_hour": 20,
+                "day_of_week": 2,
+                "ip_adress": "70.50.206.57",
+                "country": "Canada",
+                "city": "Laval",
+                "failed_attempts": 0
+            },
+            {
+                "login_time": "2025-01-08T20:49:55.776395",
+                "login_hour": 20,
+                "day_of_week": 2,
+                "ip_adress": "70.50.206.57",
+                "country": "Canada",
+                "city": "Laval",
+                "failed_attempts": 0
+            },
+            {
+                "login_time": "2025-01-08T20:51:12.864663",
+                "login_hour": 20,
+                "day_of_week": 2,
+                "ip_adress": "70.50.206.57",
+                "country": "Canada",
+                "city": "Laval",
+                "failed_attempts": 0
+            },
+            {
+                "login_time": "2025-01-08T21:11:54.644575",
+                "login_hour": 21,
+                "day_of_week": 2,
+                "ip_adress": "70.50.206.57",
+                "country": "Canada",
+                "city": "Laval",
+                "failed_attempts": 0
+            }
+        ]
+    }
+}

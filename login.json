@@ -1,0 +1,18 @@
+{
+    "test@email.com": {
+        "password": "$2b$12$O9wQtimDWeSE9lSX.VWM6.ur4VwHGThqE9lznJR4BugT7vUcW8R0m",
+        "key": "2U5XCEMKGGW4XUXFRPNQUZNRNN5UZWIT"
+    },
+    "test2@email.com": {
+        "password": "$2b$12$4kNnrVlMdKqqQ/Xo9ay8t.2mMZ2TakZYO2t5vtC92qJsK.zMnoJEu",
+        "key": "NXTBWYE7WBK4D3AFA3A73GIUESJ7P4Y6"
+    },
+    "test": {
+        "password": "$2b$12$8yUTOXMB0uNsWTnOYAVA2uxHw/z3/sh99QAH/Oiqy921DX7lPHSym",
+        "key": "DKDQMQ7GFVL3VPMPCOCWTPW5L4Q42FBF"
+    },
+    "mrinizeyd@gmail.com": {
+        "password": "$2b$12$OLgq9BZxE6/fhD3ogZjb2uvL5Qaacu4HL1iF.65EGDFfFYQM22LAq",
+        "key": "2OWGCUC7URDGSRTIR7LG5SHW47PRNB2E"
+    }
+}

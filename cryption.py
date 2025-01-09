@@ -4,8 +4,7 @@ from cryptography.fernet import Fernet
 
 class Cryption:
 
-    def __init__(self, password, key_file="secrets.key"):
-        self.password = password
+    def __init__(self, key_file="secrets.key"):
         self.key_file = key_file
         self.key = self._load_or_generate_key()
         self.f = Fernet(self.key)
@@ -20,8 +19,8 @@ class Cryption:
                 key_file.write(key)
                 return key
 
-    def encrypt(self):
-        token = self.password.encode()
+    def encrypt(self, password):
+        token = password.encode()
         return self.f.encrypt(token)
 
     def decrypt(self, token):
