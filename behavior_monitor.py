@@ -34,7 +34,7 @@ class BehaviorMonitor:
     def _train_anomaly_model(self):
 
         if not self.behavior_data:
-            return IsolationForest(n_estimators=100, contamination="auto", random_state=42)
+            return IsolationForest(n_estimators=100, contamination=0.1, random_state=42)
 
         behavior_df = pd.DataFrame([
             {
@@ -48,7 +48,7 @@ class BehaviorMonitor:
             for user_logins in self.behavior_data.values()
             for login in user_logins["logins"]
         ])
-        model = IsolationForest(n_estimators=100, contamination="auto", random_state=42)
+        model = IsolationForest(n_estimators=100, contamination=0.1, random_state=42)
         model.fit(behavior_df)
         return model
 

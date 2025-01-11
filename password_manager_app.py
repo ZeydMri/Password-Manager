@@ -1,27 +1,31 @@
+import customtkinter as ctk
+from tkinter import messagebox
 import tkinter as tk
-from tkinter import ttk, messagebox
-import pyotp
 from authenticator import Authenticator
 from generator import Generator
 from storage import Storage
-from cryption import Cryption
 import qrcode
 from PIL import Image, ImageTk
 import io
+from email_services import EmailService
 
 
-class PasswordManagerApp(tk.Tk):
+class PasswordManagerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
+        # Set the theme and color theme
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
+
         self.title("SecretGuardian Password Manager")
-        self.geometry("800x600")
+        self.geometry("900x700")
 
         # Initialize components
-        self.authenticator = None  # Will be initialized when needed
-        self.storage = None  # Will be initialized when needed
+        self.authenticator = None
+        self.storage = None
 
-        container = tk.Frame(self)
+        container = ctk.CTkFrame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
@@ -39,52 +43,231 @@ class PasswordManagerApp(tk.Tk):
         frame.tkraise()
 
 
-class HomePage(tk.Frame):
+class HomePage(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
-        label = ttk.Label(self, text="Welcome to SecretGuardian", font=("Helvetica", 24))
+        # Create main container with padding
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(expand=True, fill="both", padx=20, pady=20)
+
+        # Welcome label with custom styling
+        label = ctk.CTkLabel(
+            main_container,
+            text="Welcome to SecretGuardian",
+            font=ctk.CTkFont(size=32, weight="bold")
+        )
         label.pack(pady=50)
 
-        ttk.Button(self, text="Login",
-                   command=lambda: controller.show_frame(LoginPage)).pack(pady=10)
-        ttk.Button(self, text="Register",
-                   command=lambda: controller.show_frame(RegisterPage)).pack(pady=10)
-        ttk.Button(self, text="Password Generator",
-                   command=lambda: controller.show_frame(PasswordGeneratorPage)).pack(pady=10)
+        # Create a canvas for the shield and key logo
+        canvas = tk.Canvas(
+            main_container,
+            width=160,
+            height=180,
+            bg='#2b2b2b',
+            highlightthickness=0
+        )
+        canvas.pack(pady=(0, 30))
+
+        # Draw shield (basic polygon)
+        shield_coords = [
+            80, 20,  # Top point
+            140, 40,  # Top right
+            140, 120,  # Bottom right
+            80, 150,  # Bottom point
+            20, 120,  # Bottom left
+            20, 40  # Top left
+        ]
+
+        # Shield base
+        canvas.create_polygon(
+            shield_coords,
+            fill="#1f538d",
+            outline="#3a7fc6",
+            width=3
+        )
+
+        # Draw centered key
+        # Key head (ring)
+        canvas.create_oval(
+            65, 50,  # Top left
+            95, 80,  # Bottom right
+            fill="#2a6fb6",
+            outline="#3a7fc6",
+            width=2
+        )
+
+        # Key inner ring detail
+        canvas.create_oval(
+            70, 55,  # Top left
+            90, 75,  # Bottom right
+            fill="#1f538d",
+            outline="#3a7fc6",
+            width=1
+        )
+
+        # Key shaft
+        canvas.create_rectangle(
+            78, 75,  # Top left
+            82, 130,  # Bottom right
+            fill="#2a6fb6",
+            outline="#3a7fc6",
+            width=1
+        )
+
+        # Key teeth
+        teeth_coords = [
+            (82, 110), (90, 110),  # First tooth
+            (90, 115), (82, 115),  # Back to shaft
+            (82, 115), (88, 115),  # Second tooth
+            (88, 120), (82, 120),  # Back to shaft
+            (82, 120), (92, 120),  # Third tooth
+            (92, 125), (82, 125),  # Back to shaft
+            (82, 125), (86, 125),  # Fourth tooth
+            (86, 130), (78, 130)  # Back to shaft
+        ]
+        canvas.create_polygon(
+            teeth_coords,
+            fill="#2a6fb6",
+            outline="#3a7fc6",
+            width=1
+        )
+
+        # Add app name
+        canvas.create_text(
+            80, 165,
+            text="SecretGuardian",
+            fill="#3a7fc6",
+            font=("Helvetica", 16, "bold")
+        )
+
+        # Button container for better organization
+        button_container = ctk.CTkFrame(main_container, fg_color="transparent")
+        button_container.pack(expand=True)
+
+        # Styled buttons with hover effect
+        ctk.CTkButton(
+            button_container,
+            text="Login",
+            font=ctk.CTkFont(size=16),
+            width=200,
+            height=40,
+            corner_radius=8,
+            command=lambda: controller.show_frame(LoginPage)
+        ).pack(pady=10)
+
+        ctk.CTkButton(
+            button_container,
+            text="Register",
+            font=ctk.CTkFont(size=16),
+            width=200,
+            height=40,
+            corner_radius=8,
+            command=lambda: controller.show_frame(RegisterPage)
+        ).pack(pady=10)
+
+        ctk.CTkButton(
+            button_container,
+            text="Password Generator",
+            font=ctk.CTkFont(size=16),
+            width=200,
+            height=40,
+            corner_radius=8,
+            command=lambda: controller.show_frame(PasswordGeneratorPage)
+        ).pack(pady=10)
 
 
-class LoginPage(tk.Frame):
+class LoginPage(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
-        ttk.Label(self, text="Login", font=("Helvetica", 20)).pack(pady=20)
+        # Main container
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(expand=True, fill="both", padx=30, pady=30)
 
-        ttk.Label(self, text="Email:").pack()
-        self.email = ttk.Entry(self)
-        self.email.pack()
+        # Header
+        ctk.CTkLabel(
+            main_container,
+            text="Login",
+            font=ctk.CTkFont(size=28, weight="bold")
+        ).pack(pady=20)
 
-        ttk.Label(self, text="Password:").pack()
-        self.password = ttk.Entry(self, show="*")
-        self.password.pack()
+        # Form container
+        form_container = ctk.CTkFrame(main_container, fg_color="transparent")
+        form_container.pack(pady=20)
 
-        ttk.Label(self, text="2FA Code:").pack()
-        self.otp = ttk.Entry(self)
-        self.otp.pack()
+        # Email field
+        ctk.CTkLabel(
+            form_container,
+            text="Email:",
+            font=ctk.CTkFont(size=14)
+        ).pack()
+        self.email = ctk.CTkEntry(
+            form_container,
+            width=300,
+            height=40,
+            placeholder_text="Enter your email"
+        )
+        self.email.pack(pady=(0, 15))
 
-        ttk.Button(self, text="Login", command=self.login).pack(pady=20)
-        ttk.Button(self, text="Back",
-                   command=lambda: controller.show_frame(HomePage)).pack()
+        # Password field
+        ctk.CTkLabel(
+            form_container,
+            text="Password:",
+            font=ctk.CTkFont(size=14)
+        ).pack()
+        self.password = ctk.CTkEntry(
+            form_container,
+            width=300,
+            height=40,
+            show="•",
+            placeholder_text="Enter your password"
+        )
+        self.password.pack(pady=(0, 15))
+
+        # 2FA field
+        ctk.CTkLabel(
+            form_container,
+            text="2FA Code:",
+            font=ctk.CTkFont(size=14)
+        ).pack()
+        self.otp = ctk.CTkEntry(
+            form_container,
+            width=300,
+            height=40,
+            placeholder_text="Enter 2FA code"
+        )
+        self.otp.pack(pady=(0, 20))
+
+        # Buttons
+        ctk.CTkButton(
+            form_container,
+            text="Login",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            command=self.login
+        ).pack(pady=10)
+
+        ctk.CTkButton(
+            form_container,
+            text="Back",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            fg_color="transparent",
+            border_width=2,
+            command=lambda: controller.show_frame(HomePage)
+        ).pack()
 
     def login(self):
-        # Initialize authenticator if needed
         if self.controller.authenticator is None:
             self.controller.authenticator = Authenticator()
-            print("Initialized new authenticator")  # Debug print
 
-        # Validate input fields
         email = self.email.get()
         password = self.password.get()
         otp = self.otp.get()
@@ -94,50 +277,113 @@ class LoginPage(tk.Frame):
             return
 
         result = self.controller.authenticator.login(email, password, otp)
-        print(f"Login result: {result}")  # Debug print
 
         if result == "Login successful.":
             self.controller.show_frame(PasswordVaultPage)
-            self.email.delete(0, tk.END)
-            self.password.delete(0, tk.END)
-            self.otp.delete(0, tk.END)
+            self.email.delete(0, ctk.END)
+            self.password.delete(0, ctk.END)
+            self.otp.delete(0, ctk.END)
+        elif result == "Suspicious login detected. Additional verification required.":
+            # Create email service if not exists
+            if not hasattr(self.controller, 'email_service'):
+                self.controller.email_service = EmailService()
+
+            # Show verification window
+            verification_window = VerificationWindow(self, self.controller.email_service, email)
+            self.wait_window(verification_window)
+
+            # Check verification result
+            if verification_window.result:
+                self.controller.show_frame(PasswordVaultPage)
+                self.email.delete(0, ctk.END)
+                self.password.delete(0, ctk.END)
+                self.otp.delete(0, ctk.END)
+            else:
+                messagebox.showerror("Error", "Verification failed")
         else:
             messagebox.showerror("Error", result)
 
 
-class RegisterPage(tk.Frame):
+class RegisterPage(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
-        ttk.Label(self, text="Register", font=("Helvetica", 20)).pack(pady=20)
+        # Main container
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(expand=True, fill="both", padx=30, pady=30)
 
-        ttk.Label(self, text="Email:").pack()
-        self.email = ttk.Entry(self)
-        self.email.pack()
+        # Header
+        ctk.CTkLabel(
+            main_container,
+            text="Register",
+            font=ctk.CTkFont(size=28, weight="bold")
+        ).pack(pady=20)
 
-        ttk.Label(self, text="Password:").pack()
-        self.password = ttk.Entry(self, show="*")
-        self.password.pack()
+        # Form container
+        form_container = ctk.CTkFrame(main_container, fg_color="transparent")
+        form_container.pack(pady=20)
 
-        #self.controller.authenticator = Authenticator()
-        email = self.email.get()
-        password = self.password.get()
+        # Email field
+        ctk.CTkLabel(
+            form_container,
+            text="Email:",
+            font=ctk.CTkFont(size=14)
+        ).pack()
+        self.email = ctk.CTkEntry(
+            form_container,
+            width=300,
+            height=40,
+            placeholder_text="Enter your email"
+        )
+        self.email.pack(pady=(0, 15))
 
-        ttk.Button(self, text="Register", command=self.register_user).pack(pady=20)
-        ttk.Button(self, text="Back",
-                   command=lambda: controller.show_frame(HomePage)).pack()
+        # Password field
+        ctk.CTkLabel(
+            form_container,
+            text="Password:",
+            font=ctk.CTkFont(size=14)
+        ).pack()
+        self.password = ctk.CTkEntry(
+            form_container,
+            width=300,
+            height=40,
+            show="•",
+            placeholder_text="Enter your password"
+        )
+        self.password.pack(pady=(0, 20))
 
-        self.qr_label = ttk.Label(self)
+        # Buttons
+        ctk.CTkButton(
+            form_container,
+            text="Register",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            command=self.register_user
+        ).pack(pady=10)
+
+        ctk.CTkButton(
+            form_container,
+            text="Back",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            fg_color="transparent",
+            border_width=2,
+            command=lambda: controller.show_frame(HomePage)
+        ).pack()
+
+        # QR code label
+        self.qr_label = ctk.CTkLabel(form_container, text="")
         self.qr_label.pack(pady=20)
 
     def register_user(self):
-        # Initialize authenticator if needed
         if self.controller.authenticator is None:
             self.controller.authenticator = Authenticator()
-            print("Initialized new authenticator")  # Debug print
 
-        # Validate input fields
         email = self.email.get()
         password = self.password.get()
 
@@ -146,10 +392,8 @@ class RegisterPage(tk.Frame):
             return
 
         qr_uri = self.controller.authenticator.register(email, password)
-        print(f"Registration result: {qr_uri}")  # Debug print
 
         if not qr_uri.startswith("Email already registered") and not qr_uri.startswith("Invalid email"):
-            # Generate QR code
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -170,33 +414,88 @@ class RegisterPage(tk.Frame):
             self.qr_label.configure(image=photo)
             self.qr_label.image = photo
 
-            messagebox.showinfo("Success",
-                                "Account created! Scan the QR code with your authenticator app.")
+            messagebox.showinfo("Success", "Account created! Scan the QR code with your authenticator app.")
         else:
             messagebox.showerror("Error", qr_uri)
 
-class PasswordGeneratorPage(tk.Frame):
+
+class PasswordGeneratorPage(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
-        ttk.Label(self, text="Password Generator",
-                  font=("Helvetica", 20)).pack(pady=20)
+        # Main container
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(expand=True, fill="both", padx=30, pady=30)
 
-        ttk.Label(self, text="Password Length:").pack()
-        self.length = ttk.Entry(self)
+        # Header
+        ctk.CTkLabel(
+            main_container,
+            text="Password Generator",
+            font=ctk.CTkFont(size=28, weight="bold")
+        ).pack(pady=20)
+
+        # Content container
+        content_container = ctk.CTkFrame(main_container, fg_color="transparent")
+        content_container.pack(pady=20)
+
+        # Length input
+        ctk.CTkLabel(
+            content_container,
+            text="Password Length:",
+            font=ctk.CTkFont(size=14)
+        ).pack()
+
+        self.length = ctk.CTkEntry(
+            content_container,
+            width=200,
+            height=40,
+            placeholder_text="Enter length"
+        )
         self.length.insert(0, "12")
-        self.length.pack()
+        self.length.pack(pady=(0, 20))
 
-        self.password_var = tk.StringVar()
-        ttk.Label(self, textvariable=self.password_var).pack(pady=20)
+        # Generated password display
+        self.password_var = ctk.StringVar()
+        self.password_display = ctk.CTkLabel(
+            content_container,
+            textvariable=self.password_var,
+            font=ctk.CTkFont(size=16)
+        )
+        self.password_display.pack(pady=20)
 
-        ttk.Button(self, text="Generate",
-                   command=self.generate_password).pack(pady=10)
-        ttk.Button(self, text="Copy to Clipboard",
-                   command=self.copy_to_clipboard).pack(pady=10)
-        ttk.Button(self, text="Back",
-                   command=lambda: controller.show_frame(HomePage)).pack()
+        # Buttons
+        ctk.CTkButton(
+            content_container,
+            text="Generate Password",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            command=self.generate_password
+        ).pack(pady=10)
+
+        ctk.CTkButton(
+            content_container,
+            text="Copy to Clipboard",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            command=self.copy_to_clipboard
+        ).pack(pady=10)
+
+        ctk.CTkButton(
+            content_container,
+            text="Back",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            fg_color="transparent",
+            border_width=2,
+            command=lambda: controller.show_frame(HomePage)
+        ).pack(pady=10)
 
     def generate_password(self):
         try:
@@ -213,35 +512,123 @@ class PasswordGeneratorPage(tk.Frame):
         messagebox.showinfo("Success", "Password copied to clipboard!")
 
 
-class PasswordVaultPage(tk.Frame):
+class PasswordVaultPage(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
         self.controller.storage = Storage()
 
-        ttk.Label(self, text="Password Vault", font=("Helvetica", 20)).pack(pady=20)
+        # Main container
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(expand=True, fill="both", padx=30, pady=30)
 
-        # Add new password section
-        ttk.Label(self, text="Add New Password").pack()
+        # Header
+        ctk.CTkLabel(
+            main_container,
+            text="Password Vault",
+            font=ctk.CTkFont(size=28, weight="bold")
+        ).pack(pady=20)
 
-        ttk.Label(self, text="Account:").pack()
-        self.account = ttk.Entry(self)
-        self.account.pack()
+        # Add password section
+        add_section = ctk.CTkFrame(main_container)
+        add_section.pack(pady=20, fill="x", padx=20)
 
-        ttk.Label(self, text="Password:").pack()
-        self.password = ttk.Entry(self, show="*")
-        self.password.pack()
+        ctk.CTkLabel(
+            add_section,
+            text="Add New Password",
+            font=ctk.CTkFont(size=18, weight="bold")
+        ).pack(pady=10)
 
-        ttk.Button(self, text="Store Password", command=self.store_password).pack(pady=10)
+        # Account field
+        ctk.CTkLabel(
+            add_section,
+            text="Account:",
+            font=ctk.CTkFont(size=14)
+        ).pack()
+        self.account = ctk.CTkEntry(
+            add_section,
+            width=300,
+            height=40,
+            placeholder_text="Enter account name"
+        )
+        self.account.pack(pady=(0, 15))
+
+        # Password field
+        ctk.CTkLabel(
+            add_section,
+            text="Password:",
+            font=ctk.CTkFont(size=14)
+        ).pack()
+        self.password = ctk.CTkEntry(
+            add_section,
+            width=300,
+            height=40,
+            show="•",
+            placeholder_text="Enter password"
+        )
+        self.password.pack(pady=(0, 15))
+
+        # Store button
+        ctk.CTkButton(
+            add_section,
+            text="Store Password",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            command=self.store_password
+        ).pack(pady=10)
 
         # Stored passwords section
-        ttk.Label(self, text="Stored Passwords").pack(pady=20)
+        stored_section = ctk.CTkFrame(main_container)
+        stored_section.pack(pady=20, fill="both", expand=True, padx=20)
 
-        self.passwords_listbox = tk.Listbox(self, width=50)
-        self.passwords_listbox.pack(pady=10)
+        ctk.CTkLabel(
+            stored_section,
+            text="Stored Passwords",
+            font=ctk.CTkFont(size=18, weight="bold")
+        ).pack(pady=10)
 
-        ttk.Button(self, text="View Password", command=self.view_password).pack(pady=10)
-        ttk.Button(self, text="Logout", command=lambda: controller.show_frame(HomePage)).pack()
+        # Using regular Listbox since CTkListbox is not available
+        # We'll style it to match the theme
+        self.passwords_listbox = tk.Listbox(
+            stored_section,
+            width=50,
+            height=10,
+            font=("Helvetica", 12),
+            bg="#2b2b2b",
+            fg="white",
+            selectmode="single",
+            relief="flat",
+            borderwidth=0
+        )
+        self.passwords_listbox.pack(pady=10, fill="both", expand=True)
+
+        # Buttons container
+        button_container = ctk.CTkFrame(stored_section, fg_color="transparent")
+        button_container.pack(pady=10)
+
+        ctk.CTkButton(
+            button_container,
+            text="View Password",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            command=self.view_password
+        ).pack(pady=5)
+
+        ctk.CTkButton(
+            button_container,
+            text="Logout",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            corner_radius=8,
+            fg_color="#D22B2B",
+            hover_color="#AA0000",
+            command=lambda: controller.show_frame(HomePage)
+        ).pack(pady=5)
 
         # Load stored passwords
         self.load_passwords()
@@ -254,8 +641,8 @@ class PasswordVaultPage(tk.Frame):
             try:
                 self.controller.storage.store(account, password)
                 self.load_passwords()
-                self.account.delete(0, tk.END)
-                self.password.delete(0, tk.END)
+                self.account.delete(0, ctk.END)
+                self.password.delete(0, ctk.END)
                 messagebox.showinfo("Success", "Password stored successfully!")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to store password: {str(e)}")
@@ -282,6 +669,99 @@ class PasswordVaultPage(tk.Frame):
             messagebox.showerror("Error", "Please select an account.")
 
 
-if __name__ == "__main__":
-    app = PasswordManagerApp()
-    app.mainloop()
+class VerificationWindow(ctk.CTkToplevel):
+    def __init__(self, parent, email_service, user_email):
+        super().__init__(parent)
+        self.email_service = email_service
+        self.user_email = user_email
+        self.verification_code = self.generate_verification_code()
+        self.result = False
+
+        # Window setup
+        self.title("Login Verification")
+        self.geometry("400x300")
+
+        # Center the window
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f'{width}x{height}+{x}+{y}')
+
+        # Create main container
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(expand=True, fill="both", padx=20, pady=20)
+
+        # Add widgets
+        ctk.CTkLabel(
+            main_container,
+            text="Additional Verification Required",
+            font=ctk.CTkFont(size=20, weight="bold")
+        ).pack(pady=(0, 20))
+
+        ctk.CTkLabel(
+            main_container,
+            text="We've detected a suspicious login attempt.\nPlease check your email for a verification code.",
+            font=ctk.CTkFont(size=14),
+            justify="center"
+        ).pack(pady=(0, 20))
+
+        # Code entry
+        self.code_entry = ctk.CTkEntry(
+            main_container,
+            width=200,
+            height=40,
+            placeholder_text="Enter verification code"
+        )
+        self.code_entry.pack(pady=(0, 20))
+
+        # Verify button
+        ctk.CTkButton(
+            main_container,
+            text="Verify",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            command=self.verify_code
+        ).pack(pady=(0, 10))
+
+        # Resend button
+        ctk.CTkButton(
+            main_container,
+            text="Resend Code",
+            font=ctk.CTkFont(size=15),
+            width=200,
+            height=40,
+            fg_color="transparent",
+            border_width=2,
+            command=self.resend_code
+        ).pack()
+
+        # Send initial verification code
+        self.send_code()
+
+    def generate_verification_code(self):
+        """Generate a 6-digit verification code"""
+        import random
+        return str(random.randint(100000, 999999))
+
+    def send_code(self):
+        """Send the verification code to user's email"""
+        self.email_service.send_verification_code(self.user_email, self.verification_code)
+
+    def resend_code(self):
+        """Generate and send a new verification code"""
+        self.verification_code = self.generate_verification_code()
+        self.send_code()
+        messagebox.showinfo("Code Sent", "A new verification code has been sent to your email.")
+
+    def verify_code(self):
+        """Verify the entered code"""
+        entered_code = self.code_entry.get()
+        if entered_code == self.verification_code:
+            self.result = True
+            self.destroy()
+        else:
+            messagebox.showerror("Error", "Invalid verification code. Please try again.")
+            self.code_entry.delete(0, ctk.END)
