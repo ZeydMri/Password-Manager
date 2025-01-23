@@ -18,7 +18,7 @@ class PasswordManagerApp(ctk.CTk):
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
-        self.title("SecretGuardian Password Manager")
+        self.title("SecureGuardian Password Manager")
         self.geometry("900x700")
 
         # Initialize components
@@ -55,7 +55,7 @@ class HomePage(ctk.CTkFrame):
         # Welcome label with custom styling
         label = ctk.CTkLabel(
             main_container,
-            text="Welcome to SecretGuardian",
+            text="Welcome to SecureGuardian",
             font=ctk.CTkFont(size=32, weight="bold")
         )
         label.pack(pady=50)
@@ -137,7 +137,7 @@ class HomePage(ctk.CTkFrame):
         # Add app name
         canvas.create_text(
             80, 165,
-            text="SecretGuardian",
+            text="SecureGuardian",
             fill="#3a7fc6",
             font=("Helvetica", 16, "bold")
         )
@@ -279,6 +279,7 @@ class LoginPage(ctk.CTkFrame):
         result = self.controller.authenticator.login(email, password, otp)
 
         if result == "Login successful.":
+            self.controller.frames[PasswordVaultPage].set_current_user(email)
             self.controller.show_frame(PasswordVaultPage)
             self.email.delete(0, ctk.END)
             self.password.delete(0, ctk.END)
@@ -517,6 +518,7 @@ class PasswordVaultPage(ctk.CTkFrame):
         ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
         self.controller.storage = Storage()
+        self.current_user = None
 
         # Main container
         main_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -589,8 +591,7 @@ class PasswordVaultPage(ctk.CTkFrame):
             font=ctk.CTkFont(size=18, weight="bold")
         ).pack(pady=10)
 
-        # Using regular Listbox since CTkListbox is not available
-        # We'll style it to match the theme
+
         self.passwords_listbox = tk.Listbox(
             stored_section,
             width=50,
@@ -630,16 +631,20 @@ class PasswordVaultPage(ctk.CTkFrame):
             command=lambda: controller.show_frame(HomePage)
         ).pack(pady=5)
 
-        # Load stored passwords
+
+    def set_current_user(self, email):
+
+        self.current_user = email
         self.load_passwords()
 
     def store_password(self):
+
         account = self.account.get()
         password = self.password.get()
 
         if account and password:
             try:
-                self.controller.storage.store(account, password)
+                self.controller.storage.store(self.current_user, account, password)
                 self.load_passwords()
                 self.account.delete(0, ctk.END)
                 self.password.delete(0, ctk.END)
@@ -651,15 +656,16 @@ class PasswordVaultPage(ctk.CTkFrame):
 
     def load_passwords(self):
         self.passwords_listbox.delete(0, tk.END)
-        for account in self.controller.storage.data.keys():
-            self.passwords_listbox.insert(tk.END, account)
+        if self.current_user:
+            for account in self.controller.storage.get_accounts_for_users(self.current_user):
+                self.passwords_listbox.insert(tk.END, account)
 
     def view_password(self):
         selection = self.passwords_listbox.curselection()
         if selection:
             account = self.passwords_listbox.get(selection[0])
             try:
-                decrypted_password = self.controller.storage.retrieve(account)
+                decrypted_password = self.controller.storage.retrieve(self.current_user, account)
                 messagebox.showinfo("Password", f"Password for {account}: {decrypted_password}")
             except KeyError:
                 messagebox.showerror("Error", "No password found for this account.")

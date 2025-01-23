@@ -17,21 +17,29 @@ class Storage:
         except FileNotFoundError:
             self.data = {}
 
-    def store(self, email, password):
+    def store(self, user_email, account, password):
 
         encrypted_password = Cryption().encrypt(password)
         encrypted_password_base64 = base64.b64encode(encrypted_password).decode('utf-8')
-        self.data[email] = encrypted_password_base64
+
+        if user_email not in self.data:
+            self.data[user_email] = {}
+
+        self.data[user_email][account] = encrypted_password_base64
 
         with open(self.password_file, "w") as file:
             json.dump(self.data, file, indent=4)
 
 
-    def retrieve(self, email):
+    def retrieve(self, user_email, account):
 
-        if email in self.data:
-            encrypted_password_base64 = self.data[email]
+        if account in self.data[user_email]:
+            encrypted_password_base64 = self.data[user_email][account]
             encrypted_password = base64.b64decode(encrypted_password_base64.encode('utf-8'))
             return Cryption().decrypt(encrypted_password)
         else:
-            raise KeyError(f"No password found for account: {email}")
+            raise KeyError(f"No password found for account: {account}")
+
+    def get_accounts_for_users(self, user_email):
+
+        return list(self.data.get(user_email, {}).keys())

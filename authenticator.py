@@ -62,7 +62,7 @@ class Authenticator:
             json.dump(self.data, f, indent=4)
 
         tp = pyotp.totp.TOTP(key)
-        uri = tp.provisioning_uri(name=email, issuer_name="SecretGuardian")
+        uri = tp.provisioning_uri(name=email, issuer_name="SecureGuardian")
         print(f"Generated URI: {uri}")  # Debug
         return uri
 

@@ -6,11 +6,11 @@ from datetime import datetime
 
 class EmailService:
     def __init__(self):
-        # Email configuration - should be set as environment variables
+
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
-        self.sender_email = os.getenv("EMAIL_SENDER")  # Your Gmail address
-        self.sender_password = os.getenv("EMAIL_PASSWORD")  # Your App Password
+        self.sender_email = os.getenv("EMAIL_SENDER")
+        self.sender_password = os.getenv("EMAIL_PASSWORD")
 
     def send_registration_email(self, user_email):
         if not self.sender_email or not self.sender_password:
@@ -18,15 +18,15 @@ class EmailService:
             return False
 
         try:
-            # Create message
+
             msg = MIMEMultipart()
             msg['From'] = self.sender_email
             msg['To'] = user_email
-            msg['Subject'] = "Welcome to SecretGuardian Password Manager"
+            msg['Subject'] = "Welcome to SecureGuardian Password Manager"
 
-            # Create email body
+
             body = f"""
-Welcome to SecretGuardian Password Manager!
+Welcome to SecureGuardian Password Manager!
 
 Thank you for registering with us. Your account has been successfully created.
 
@@ -39,12 +39,12 @@ Important Security Tips:
 If you didn't create this account, please contact us immediately.
 
 Best regards,
-The SecretGuardian Team
+The SecureGuardian Team
             """
 
             msg.attach(MIMEText(body, 'plain'))
 
-            # Create SMTP session
+
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()  # Enable TLS
                 server.login(self.sender_email, self.sender_password)
@@ -68,13 +68,13 @@ The SecretGuardian Team
             msg['To'] = user_email
             msg['Subject'] = "⚠️ Suspicious Login Activity Detected"
 
-            # Format the login time nicely
+
             login_time = datetime.fromisoformat(login_data['login_time']).strftime("%B %d, %Y at %I:%M %p")
 
             body = f"""
             ⚠️ SECURITY ALERT ⚠️
 
-We detected a suspicious login attempt to your SecretGuardian account.
+We detected a suspicious login attempt to your SecureGuardian account.
 
 Login Details:
     - Time: {login_time}
@@ -101,14 +101,14 @@ Security Tips:
 If you need assistance or have questions, please contact our support team immediately.
 
 Stay secure,
-The SecretGuardian Security Team
+The SecureGuardian Security Team
 
 Note: This is an automated security alert. Please do not reply to this email.
             """
 
             msg.attach(MIMEText(body, 'plain'))
 
-            # Create SMTP session and send email
+
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
                 server.login(self.sender_email, self.sender_password)
@@ -122,16 +122,7 @@ Note: This is an automated security alert. Please do not reply to this email.
             return False
 
     def send_verification_code(self, user_email, verification_code):
-        """
-        Send a verification code to the user's email for suspicious login verification.
 
-        Args:
-            user_email (str): The recipient's email address
-            verification_code (str): The verification code to be sent
-
-        Returns:
-            bool: True if email was sent successfully, False otherwise
-        """
         if not self.sender_email or not self.sender_password:
             print("Email configuration not set. Please set environment variables.")
             return False
@@ -140,10 +131,10 @@ Note: This is an automated security alert. Please do not reply to this email.
             msg = MIMEMultipart()
             msg['From'] = self.sender_email
             msg['To'] = user_email
-            msg['Subject'] = "SecretGuardian - Verify Your Login"
+            msg['Subject'] = "SecureGuardian - Verify Your Login"
 
             body = f"""
-SecretGuardian Security Verification
+SecureGuardian Security Verification
 
 A login attempt requires additional verification.
 
@@ -157,7 +148,7 @@ If you did not attempt to log in, please:
 This code will expire in 10 minutes.
 
 Best regards,
-The SecretGuardian Security Team
+The SecureGuardian Security Team
             """
 
             msg.attach(MIMEText(body, 'plain'))
