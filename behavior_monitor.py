@@ -61,11 +61,9 @@ class BehaviorMonitor:
 
         return "unknown", "unknown", "unknown"
 
-    def track_login(self, email):
-        from authenticator import Authenticator
+    def track_login(self, email, failed_attempts):
 
         login_time = datetime.now()
-        failed_attempts = Authenticator().failed_attempts.get(email, 0)
         ip_address, country, city = self.get_geolocation()
 
         login_data = {
