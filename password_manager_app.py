@@ -64,8 +64,8 @@ class HomePage(ctk.CTkFrame):
         canvas = tk.Canvas(
             main_container,
             width=160,
-            height=180,
-            bg='#2b2b2b',
+            height=220,
+            bg='#333333',
             highlightthickness=0
         )
         canvas.pack(pady=(0, 30))
@@ -136,10 +136,17 @@ class HomePage(ctk.CTkFrame):
 
         # Add app name
         canvas.create_text(
-            80, 165,
+            80, 170,
             text="SecureGuardian",
             fill="#3a7fc6",
-            font=("Helvetica", 16, "bold")
+            font=("Helvetica", 19, "bold")
+        )
+
+        canvas.create_text(
+            80, 195,
+            text="Yours To Protect",
+            fill="#3a7fc6",
+            font=("Helvetica", 15, "bold italic")
         )
 
         # Button container for better organization

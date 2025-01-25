@@ -36,12 +36,14 @@ class BehaviorMonitor:
         if not self.behavior_data:
             return IsolationForest(n_estimators=100, contamination=0.1, random_state=42)
 
+
+
         behavior_df = pd.DataFrame([
             {
                 "login_hours": login["login_hour"],
                 "day_of_week": login["day_of_week"],
                 "failed_attempts": login["failed_attempts"],
-                "hashed_ip": int(hashlib.sha256(login["ip_adress"].encode()).hexdigest(), 16),
+                "hashed_ip": int(hashlib.sha256(login["ip_adress"].encode()).hexdigest()[:8], 16),
                 "country_encoded": self.encoder.fit_transform([login["country"]]),
                 "city_encoded": self.encoder.fit_transform([login["city"]]),
             }
