@@ -36,8 +36,6 @@ class BehaviorMonitor:
         if not self.behavior_data:
             return IsolationForest(n_estimators=100, contamination=0.1, random_state=42)
 
-
-
         behavior_df = pd.DataFrame([
             {
                 "login_hours": login["login_hour"],

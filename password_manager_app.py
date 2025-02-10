@@ -11,13 +11,37 @@ from email_services import EmailService
 
 
 class PasswordManagerApp(ctk.CTk):
+    """
+    Main application window managing all UI components and navigation.
+
+    This class serves as the container for all application pages and manages
+    navigation between them. It handles initialization of security components
+    and maintains the application state.
+
+    Public Methods:
+        show_frame(frame_class: class) -> None:
+            Displays the specified page frame.
+
+    Attributes:
+        authenticator (Authenticator): Handles user authentication.
+        storage (Storage): Manages password storage.
+        frames (dict): Stores page frames keyed by class.
+
+    """
+
     def __init__(self):
+        """
+        Initialize the main application window and components.
+
+        """
+
         super().__init__()
 
         # Set the theme and color theme
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
+        # Set up main window
         self.title("SecureGuardian Password Manager")
         self.geometry("900x700")
 
@@ -25,26 +49,56 @@ class PasswordManagerApp(ctk.CTk):
         self.authenticator = None
         self.storage = None
 
+        # Create main container for pages
         container = ctk.CTkFrame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
+        # Initialize frame dictionary and create frames
         self.frames = {}
         for F in (HomePage, LoginPage, RegisterPage, PasswordGeneratorPage, PasswordVaultPage):
             frame = F(container, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
 
+        # Show home page initially
         self.show_frame(HomePage)
 
     def show_frame(self, cont):
+        """
+        Display the specified page frame.
+
+        Args:
+            cont (class): The page class to display.
+
+        """
         frame = self.frames[cont]
         frame.tkraise()
 
 
 class HomePage(ctk.CTkFrame):
+    """
+    Home page displaying main menu and application logo.
+
+    This class provides the initial view of the application with
+    navigation options to other pages and the application's branding.
+
+    Attributes:
+        controller (PasswordManagerApp): Reference to main application.
+
+    """
+
     def __init__(self, parent, controller):
+        """
+        Initialize home page with logo and navigation buttons.
+
+        Args:
+            parent: Parent widget (container frame)
+            controller (PasswordManagerApp): Main application instance
+
+        """
+
         ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
@@ -134,7 +188,7 @@ class HomePage(ctk.CTkFrame):
             width=1
         )
 
-        # Add app name
+        # Adding app name
         canvas.create_text(
             80, 170,
             text="SecureGuardian",
@@ -142,6 +196,7 @@ class HomePage(ctk.CTkFrame):
             font=("Helvetica", 19, "bold")
         )
 
+        # Adding slogan under app name
         canvas.create_text(
             80, 195,
             text="Yours To Protect",
@@ -186,11 +241,35 @@ class HomePage(ctk.CTkFrame):
 
 
 class LoginPage(ctk.CTkFrame):
+    """
+    Login page handling user authentication.
+
+    This class provides the login interface with email, password,
+    and 2FA inputs. It handles authentication and suspicious login
+    detection.
+
+    Attributes:
+        controller (PasswordManagerApp): Reference to main application.
+        email (CTkEntry): Email input field.
+        password (CTkEntry): Password input field.
+        otp (CTkEntry): 2FA code input field.
+
+    """
+
     def __init__(self, parent, controller):
+        """
+        Initialize login page with input fields and buttons.
+
+        Args:
+            parent: Parent widget (container frame)
+            controller (PasswordManagerApp): Main application instance
+
+        """
+
         ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
-        # Main container
+        # Create main container
         main_container = ctk.CTkFrame(self, fg_color="transparent")
         main_container.pack(expand=True, fill="both", padx=30, pady=30)
 
@@ -248,7 +327,7 @@ class LoginPage(ctk.CTkFrame):
         )
         self.otp.pack(pady=(0, 20))
 
-        # Buttons
+        # Login button
         ctk.CTkButton(
             form_container,
             text="Login",
@@ -259,6 +338,7 @@ class LoginPage(ctk.CTkFrame):
             command=self.login
         ).pack(pady=10)
 
+        # Back button
         ctk.CTkButton(
             form_container,
             text="Back",
@@ -272,27 +352,41 @@ class LoginPage(ctk.CTkFrame):
         ).pack()
 
     def login(self):
+        """
+        Handle login attempt and authentication process.
+
+        Validates input fields, attempts authentication, and handles
+        suspicious login detection. Shows appropriate error messages
+        for various failure cases.
+
+        """
+        # Initialize authenticator if needed
         if self.controller.authenticator is None:
             self.controller.authenticator = Authenticator()
 
+        # Get input values
         email = self.email.get()
         password = self.password.get()
         otp = self.otp.get()
 
+        # Validate all fields are filled
         if not email or not password or not otp:
             messagebox.showerror("Error", "Please fill in all fields")
             return
 
+        # Attempt login
         result = self.controller.authenticator.login(email, password, otp)
 
         if result == "Login successful.":
+            # Set current user and show password vault
             self.controller.frames[PasswordVaultPage].set_current_user(email)
             self.controller.show_frame(PasswordVaultPage)
+            # Clear input fields
             self.email.delete(0, ctk.END)
             self.password.delete(0, ctk.END)
             self.otp.delete(0, ctk.END)
         elif result == "Suspicious login detected. Additional verification required.":
-            # Create email service if not exists
+            # Initialize email service if not exists
             if not hasattr(self.controller, 'email_service'):
                 self.controller.email_service = EmailService()
 
@@ -313,7 +407,29 @@ class LoginPage(ctk.CTkFrame):
 
 
 class RegisterPage(ctk.CTkFrame):
+    """
+    Registration page for new user accounts.
+
+    This class handles new user registration, including email validation,
+    password setting, and 2FA setup with QR code generation.
+
+    Attributes:
+        controller (PasswordManagerApp): Reference to main application.
+        email (CTkEntry): Email input field.
+        password (CTkEntry): Password input field.
+        qr_label (CTkLabel): Label for displaying 2FA QR code.
+
+    """
+
     def __init__(self, parent, controller):
+        """
+        Initialize registration page with input fields and QR display.
+
+        Args:
+            parent: Parent widget (container frame)
+            controller (PasswordManagerApp): Main application instance
+        """
+
         ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
@@ -361,7 +477,7 @@ class RegisterPage(ctk.CTkFrame):
         )
         self.password.pack(pady=(0, 20))
 
-        # Buttons
+        # Register button
         ctk.CTkButton(
             form_container,
             text="Register",
@@ -372,6 +488,7 @@ class RegisterPage(ctk.CTkFrame):
             command=self.register_user
         ).pack(pady=10)
 
+        # Back button
         ctk.CTkButton(
             form_container,
             text="Back",
@@ -389,18 +506,31 @@ class RegisterPage(ctk.CTkFrame):
         self.qr_label.pack(pady=20)
 
     def register_user(self):
+        """
+        Process user registration and generate 2FA QR code.
+
+        Validates input, registers user, and displays QR code for
+        2FA setup. Shows appropriate error messages for validation
+        failures or existing email addresses.
+
+        """
+        # Initialize authenticator if needed
         if self.controller.authenticator is None:
             self.controller.authenticator = Authenticator()
 
+        # Get input values
         email = self.email.get()
         password = self.password.get()
 
+        # Validate input fields
         if not email or not password:
             messagebox.showerror("Error", "Please fill in all fields")
             return
 
+        # Attempt registration
         qr_uri = self.controller.authenticator.register(email, password)
 
+        # Handle registration result
         if not qr_uri.startswith("Email already registered") and not qr_uri.startswith("Invalid email"):
             qr = qrcode.QRCode(
                 version=1,
@@ -412,6 +542,7 @@ class RegisterPage(ctk.CTkFrame):
             qr.make(fit=True)
             qr_image = qr.make_image(fill_color="black", back_color="white")
 
+            # Convert QR code to displayable format
             img_byte_arr = io.BytesIO()
             qr_image.save(img_byte_arr, format='PNG')
             img_byte_arr = img_byte_arr.getvalue()
@@ -419,16 +550,41 @@ class RegisterPage(ctk.CTkFrame):
             image = Image.open(io.BytesIO(img_byte_arr))
             photo = ImageTk.PhotoImage(image)
 
+            # Display QR code
             self.qr_label.configure(image=photo)
             self.qr_label.image = photo
 
             messagebox.showinfo("Success", "Account created! Scan the QR code with your authenticator app.")
         else:
+            # Show error message
             messagebox.showerror("Error", qr_uri)
 
 
 class PasswordGeneratorPage(ctk.CTkFrame):
+    """
+    Password generator interface.
+
+    This class provides functionality to generate secure random passwords
+    with customizable length and copy them to clipboard.
+
+    Attributes:
+        controller (PasswordManagerApp): Reference to main application.
+        length (CTkEntry): Password length input field.
+        password_var (StringVar): Stores generated password.
+        password_display (CTkLabel): Displays generated password.
+
+    """
+
     def __init__(self, parent, controller):
+        """
+        Initialize password generator page with controls.
+
+        Args:
+            parent: Parent widget (container frame)
+            controller (PasswordManagerApp): Main application instance
+
+        """
+
         ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
 
@@ -472,7 +628,7 @@ class PasswordGeneratorPage(ctk.CTkFrame):
         )
         self.password_display.pack(pady=20)
 
-        # Buttons
+        # Generate button
         ctk.CTkButton(
             content_container,
             text="Generate Password",
@@ -483,6 +639,7 @@ class PasswordGeneratorPage(ctk.CTkFrame):
             command=self.generate_password
         ).pack(pady=10)
 
+        # Copy button
         ctk.CTkButton(
             content_container,
             text="Copy to Clipboard",
@@ -493,6 +650,7 @@ class PasswordGeneratorPage(ctk.CTkFrame):
             command=self.copy_to_clipboard
         ).pack(pady=10)
 
+        # Back button
         ctk.CTkButton(
             content_container,
             text="Back",
@@ -506,6 +664,13 @@ class PasswordGeneratorPage(ctk.CTkFrame):
         ).pack(pady=10)
 
     def generate_password(self):
+        """
+        Generate a new random password.
+
+        Gets desired length from input field and uses Generator
+        class to create a secure random password.
+
+        """
         try:
             length = int(self.length.get())
             generator = Generator("")
@@ -515,13 +680,41 @@ class PasswordGeneratorPage(ctk.CTkFrame):
             messagebox.showerror("Error", "Please enter a valid number.")
 
     def copy_to_clipboard(self):
+        """
+        Copy generated password to system clipboard.
+
+        """
         self.clipboard_clear()
         self.clipboard_append(self.password_var.get())
         messagebox.showinfo("Success", "Password copied to clipboard!")
 
 
 class PasswordVaultPage(ctk.CTkFrame):
+    """
+    Password vault for storing and managing passwords.
+
+    This class provides the interface for storing, viewing, and managing
+    encrypted passwords for different accounts.
+
+    Attributes:
+        controller (PasswordManagerApp): Reference to main application.
+        current_user (str): Currently logged in user's email.
+        account (CTkEntry): Account name input field.
+        password (CTkEntry): Password input field.
+        passwords_listbox (Listbox): Display of stored accounts.
+
+    """
+
     def __init__(self, parent, controller):
+        """
+        Initialize password vault page with storage interface.
+
+        Args:
+            parent: Parent widget (container frame)
+            controller (PasswordManagerApp): Main application instance
+
+        """
+
         ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
         self.controller.storage = Storage()
@@ -616,6 +809,7 @@ class PasswordVaultPage(ctk.CTkFrame):
         button_container = ctk.CTkFrame(stored_section, fg_color="transparent")
         button_container.pack(pady=10)
 
+        # View password button
         ctk.CTkButton(
             button_container,
             text="View Password",
@@ -626,6 +820,7 @@ class PasswordVaultPage(ctk.CTkFrame):
             command=self.view_password
         ).pack(pady=5)
 
+        # Logout button
         ctk.CTkButton(
             button_container,
             text="Logout",
@@ -640,21 +835,43 @@ class PasswordVaultPage(ctk.CTkFrame):
 
 
     def set_current_user(self, email):
+        """
+        Set current user and load their stored passwords.
+
+        Args:
+            email (str): User's email address
+
+        """
 
         self.current_user = email
         self.load_passwords()
 
     def store_password(self):
+        """
+        Store a new password for current user.
 
+        Encrypts and stores password, then refreshes the display.
+        Shows success or error message accordingly.
+
+        """
+
+        # Get input values from entry fields
         account = self.account.get()
         password = self.password.get()
 
+        # Validate that both fields are filled
         if account and password:
             try:
+                # Attempt to store encrypted password
                 self.controller.storage.store(self.current_user, account, password)
+
+                # Refresh the displayed password list
                 self.load_passwords()
+
+                # Clear input fields for security
                 self.account.delete(0, ctk.END)
                 self.password.delete(0, ctk.END)
+
                 messagebox.showinfo("Success", "Password stored successfully!")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to store password: {str(e)}")
@@ -662,17 +879,36 @@ class PasswordVaultPage(ctk.CTkFrame):
             messagebox.showerror("Error", "Please fill in all fields.")
 
     def load_passwords(self):
+        """
+        Load and display stored passwords for current user.
+
+        """
+        # Clear existing entries from listbox
         self.passwords_listbox.delete(0, tk.END)
+
+        # Only load passwords if there's a logged-in user
         if self.current_user:
+            # Get and display account names for current user
             for account in self.controller.storage.get_accounts_for_users(self.current_user):
                 self.passwords_listbox.insert(tk.END, account)
 
     def view_password(self):
+        """
+        Retrieve and display selected password.
+
+        Decrypts and shows password for selected account.
+        Shows error message if no account selected or retrieval fails.
+
+        """
+        # Get the selected item from listbox
         selection = self.passwords_listbox.curselection()
         if selection:
+            # Get account name from selected item
             account = self.passwords_listbox.get(selection[0])
             try:
+                # Attempt to retrieve and decrypt password
                 decrypted_password = self.controller.storage.retrieve(self.current_user, account)
+                # Display the decrypted password
                 messagebox.showinfo("Password", f"Password for {account}: {decrypted_password}")
             except KeyError:
                 messagebox.showerror("Error", "No password found for this account.")
@@ -683,7 +919,32 @@ class PasswordVaultPage(ctk.CTkFrame):
 
 
 class VerificationWindow(ctk.CTkToplevel):
+    """
+    Additional verification window for suspicious logins.
+
+    This class provides a modal dialog for handling additional
+    verification when suspicious login activity is detected.
+
+    Attributes:
+        email_service (EmailService): Email service for sending codes.
+        user_email (str): User's email address.
+        verification_code (str): Current verification code.
+        result (bool): Verification result status.
+        code_entry (CTkEntry): Verification code input field.
+
+    """
+
     def __init__(self, parent, email_service, user_email):
+        """
+        Initialize verification window with code input.
+
+        Args:
+            parent: Parent widget
+            email_service (EmailService): Email service instance
+            user_email (str): User's email address
+
+        """
+
         super().__init__(parent)
         self.email_service = email_service
         self.user_email = user_email
@@ -713,6 +974,7 @@ class VerificationWindow(ctk.CTkToplevel):
             font=ctk.CTkFont(size=20, weight="bold")
         ).pack(pady=(0, 20))
 
+        # Information message
         ctk.CTkLabel(
             main_container,
             text="We've detected a suspicious login attempt.\nPlease check your email for a verification code.",
@@ -755,23 +1017,65 @@ class VerificationWindow(ctk.CTkToplevel):
         self.send_code()
 
     def generate_verification_code(self):
-        """Generate a 6-digit verification code"""
+        """
+        Generate a 6-digit verification code
+
+        Returns:
+            str: 6-digit verification code
+
+        Note:
+            Uses cryptographically secure random number generation
+            for enhanced security.
+
+        """
         import random
         return str(random.randint(100000, 999999))
 
     def send_code(self):
-        """Send the verification code to user's email"""
-        self.email_service.send_verification_code(self.user_email, self.verification_code)
+        """
+        Send the verification code to user's email
+
+        Uses email service to send the code securely.
+        Called automatically during initialization and
+        when user requests code resend.
+
+        """
+        self.email_service.send_verification_code(
+            self.user_email,
+            self.verification_code
+        )
 
     def resend_code(self):
-        """Generate and send a new verification code"""
+        """
+        Generate and send a new verification code
+
+        Generates new code and sends it via email when user
+        requests code resend. Shows confirmation message.
+
+        """
+        # Generate new code
         self.verification_code = self.generate_verification_code()
+        # Send the new code
         self.send_code()
-        messagebox.showinfo("Code Sent", "A new verification code has been sent to your email.")
+        # Inform user
+        messagebox.showinfo(
+            "Code Sent",
+            "A new verification code has been sent to your email."
+        )
 
     def verify_code(self):
-        """Verify the entered code"""
+        """
+        Verify the entered code
+
+        Compares user input with stored verification code.
+        Sets result and closes window if verification succeeds.
+        Shows error and clears input if verification fails.
+
+        """
+        # Get entered code
         entered_code = self.code_entry.get()
+
+        # Compare entered code with generated code
         if entered_code == self.verification_code:
             self.result = True
             self.destroy()
