@@ -1,4 +1,4 @@
-# **SecureGuardian: Advanced Password Management System**
+# **SecureGuardian: Password Management System**
 SecureGuardian is a full-featured, security-first password management application built with Python. The system combines modern cryptographic techniques, multi-factor authentication, and machine learning-based anomaly detection to provide a comprehensive solution for secure credential storage and management.
 
 ## **Key Features**
